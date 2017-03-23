@@ -1,7 +1,7 @@
 # ECNS
 Implementations for registrars and local resolvers for the Ethereum Classic Name Service.
 
-For documentation of the ECNS system, see [docs.ECNS.domains](http://docs.ECNS.domains/).
+For documentation of the ECNS system, see [docs.ENS.domains](http://docs.ens.domains/).
 
 To run unittests, clone this repository, and run:
 
