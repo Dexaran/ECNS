@@ -24,7 +24,8 @@ import './AbstractENS.sol';
 contract Deed {
     address public registrar;
     
-    //My Rinkeby address
+    // My Rinkeby address
+    // Will be replaced  by management multisig address in final version
     address burn = 0x222E674FB1a7910cCF228f8aECF760508426b482;
     
     uint public creationDate;
@@ -45,7 +46,7 @@ contract Deed {
         _;
     }
 
-    function Deed(address _owner, address _burn) payable {
+    function Deed(address _owner) payable {
         owner = _owner;
         registrar = msg.sender;
         creationDate = now;
@@ -105,10 +106,12 @@ contract Deed {
  */
 contract Registrar {
     
-    //This RinkebyAddress( 0x856f7694ccd88CF27C4Ad7C54cF044B6Bc3a22d2 )
+    //This RinkebyAddress( 0x00B046f9FAc7e09f8fB46A3ba66AA19e1012CAA7 )
+    // ENS Rinkeby address ( 0x71638b2c5df0Aa9bbFb3D4c6530939d10870dF2E )
+    AbstractENS public ens = AbstractENS(0x71638b2c5df0Aa9bbFb3D4c6530939d10870dF2E);
     
-    AbstractENS public ens;
-    bytes32 public rootNode;
+    // namehash("etc")
+    bytes32 public rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;
 
     mapping (bytes32 => entry) _entries;
     mapping (address => mapping(bytes32 => Deed)) public sealedBids;
@@ -119,10 +122,8 @@ contract Registrar {
     uint32 constant revealPeriod = 10 minutes; //default 48 hours
     uint32 public constant launchLength = 8 minutes; //default 8 weeks
 
-
-    address burn; // This address will be used in every Deed to transfer funds on selfdestruct.
-    uint minPrice = 0.01 ether;
-    address public owner; // Multisig address that is allowed to debug this Registrar.
+    uint public minPrice = 0.01 ether; // Mutable variable. Default constant
+    address public registrarOwner; // Multisig address that is allowed to change min price of this Registrar.
     
     uint public registryStarted;
 
@@ -166,11 +167,6 @@ contract Registrar {
         }
     }
 
-    modifier onlyRegistrarOwner {
-        if (msg.sender != owner) throw;
-        _;
-    }
-
     modifier inState(bytes32 _hash, Mode _state) {
         if (state(_hash) != _state) throw;
         _;
@@ -191,41 +187,18 @@ contract Registrar {
         return (state(_hash), h.deed, h.registrationDate, h.value, h.highestBid);
     }
 
-    /*
+    /**
      * @dev Constructs a new Registrar, with the provided address as the owner of the root node.
-     *
-     * @param _ens The address of the ENS
-     * @param _rootNode The hash of the rootnode.
      */
-    function Registrar() {
-        ens = AbstractENS(0xE03c622F51b79F8Ae873C8dE99f36d0d2fC25150);
-        rootNode = 0x997997d543f68c7b77e62a13efc6e546bd2a81c2aa8769c3354422ebbbb4fba4; // Keccak-256 of "etc"
-        registryStarted = now;
-        owner=msg.sender;
-    }
-    
-    function changeMinPrice(uint _newMinPrice) onlyRegistrarOwner {
-        minPrice = _newMinPrice;
-    }
-    
-    function changeBurnAddress(address _newBurnAddress) onlyRegistrarOwner {
-        burn = _newBurnAddress;
-    }
-    
-    function discardOwnership() onlyRegistrarOwner {
-        owner=0xdead;
-    }
-    
-    function DEBUG_ChangeENS(AbstractENS _ens) {
-        ens = _ens;
-    }
-    
-    function DEBUG_ChangeRootNode(bytes32 _rootNode) {
-        rootNode = _rootNode;
-    }
-    
-    function DEBUG_ChangeStartDate(uint _startDate) {
+    function Registrar(uint _startDate) {
         registryStarted = _startDate > 0 ? _startDate : now;
+        registrarOwner = msg.sender;
+    }
+    
+    function changeMinPrice(uint _newMinPrice) {
+        if(msg.sender != registrarOwner) throw;
+        
+        minPrice = _newMinPrice;
     }
 
     /**
@@ -392,7 +365,7 @@ contract Registrar {
         if (msg.value < minPrice) throw;
 
         // Creates a new hash contract with the owner
-        Deed newBid = (new Deed).value(msg.value)(msg.sender, burn);
+        Deed newBid = (new Deed).value(msg.value)(msg.sender);
         sealedBids[msg.sender][sealedBid] = newBid;
         NewBid(sealedBid, msg.sender, msg.value);
     }
