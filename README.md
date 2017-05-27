@@ -59,9 +59,9 @@ Resolvers must implement one mandatory method, `has`, and may implement any numb
 
 ## has(bytes32 node, bytes32 kind) constant returns (bool)
 
-Returns true iff the specified node has the specified record kind available. Record kinds are defined by each resolver type and standardised in EIPs; currently only "addr" is supported.
+Returns true if the specified node has the specified record kind available. Record kinds are defined by each resolver type and standardised in EIPs; currently only "addr" is supported.
 
-`has()` must return false iff the corresponding record type specific methods will throw if called.
+`has()` must return false if the corresponding record type specific methods will throw if called.
 
 ## addr(bytes32 node) constant returns (address ret)
 
