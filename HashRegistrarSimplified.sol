@@ -23,7 +23,10 @@ import './AbstractENS.sol';
  */
 contract Deed {
     address public registrar;
-    address constant burn = 0xdead;
+    
+    //My Rinkeby address
+    address burn = 0x222E674FB1a7910cCF228f8aECF760508426b482;
+    
     uint public creationDate;
     address public owner;
     address public previousOwner;
@@ -42,7 +45,7 @@ contract Deed {
         _;
     }
 
-    function Deed(address _owner) payable {
+    function Deed(address _owner, address _burn) payable {
         owner = _owner;
         registrar = msg.sender;
         creationDate = now;
@@ -101,6 +104,9 @@ contract Deed {
  * @dev The registrar handles the auction process for each subnode of the node it owns.
  */
 contract Registrar {
+    
+    //This RinkebyAddress( 0x856f7694ccd88CF27C4Ad7C54cF044B6Bc3a22d2 )
+    
     AbstractENS public ens;
     bytes32 public rootNode;
 
@@ -109,11 +115,15 @@ contract Registrar {
     
     enum Mode { Open, Auction, Owned, Forbidden, Reveal, NotYetAvailable }
 
-    uint32 constant totalAuctionLength = 5 days;
-    uint32 constant revealPeriod = 48 hours;
-    uint32 public constant launchLength = 8 weeks;
+    uint32 constant totalAuctionLength = 20 minutes; //default 2 days
+    uint32 constant revealPeriod = 10 minutes; //default 48 hours
+    uint32 public constant launchLength = 8 minutes; //default 8 weeks
 
-    uint constant minPrice = 0.01 ether;
+
+    address burn; // This address will be used in every Deed to transfer funds on selfdestruct.
+    uint minPrice = 0.01 ether;
+    address public owner; // Multisig address that is allowed to debug this Registrar.
+    
     uint public registryStarted;
 
     event AuctionStarted(bytes32 indexed hash, uint registrationDate);
@@ -156,6 +166,11 @@ contract Registrar {
         }
     }
 
+    modifier onlyRegistrarOwner {
+        if (msg.sender != owner) throw;
+        _;
+    }
+
     modifier inState(bytes32 _hash, Mode _state) {
         if (state(_hash) != _state) throw;
         _;
@@ -176,15 +191,40 @@ contract Registrar {
         return (state(_hash), h.deed, h.registrationDate, h.value, h.highestBid);
     }
 
-    /**
+    /*
      * @dev Constructs a new Registrar, with the provided address as the owner of the root node.
      *
      * @param _ens The address of the ENS
      * @param _rootNode The hash of the rootnode.
      */
-    function Registrar(AbstractENS _ens, bytes32 _rootNode, uint _startDate) {
+    function Registrar() {
+        ens = AbstractENS(0xE03c622F51b79F8Ae873C8dE99f36d0d2fC25150);
+        rootNode = 0x997997d543f68c7b77e62a13efc6e546bd2a81c2aa8769c3354422ebbbb4fba4; // Keccak-256 of "etc"
+        registryStarted = now;
+        owner=msg.sender;
+    }
+    
+    function changeMinPrice(uint _newMinPrice) onlyRegistrarOwner {
+        minPrice = _newMinPrice;
+    }
+    
+    function changeBurnAddress(address _newBurnAddress) onlyRegistrarOwner {
+        burn = _newBurnAddress;
+    }
+    
+    function discardOwnership() onlyRegistrarOwner {
+        owner=0xdead;
+    }
+    
+    function DEBUG_ChangeENS(AbstractENS _ens) {
         ens = _ens;
+    }
+    
+    function DEBUG_ChangeRootNode(bytes32 _rootNode) {
         rootNode = _rootNode;
+    }
+    
+    function DEBUG_ChangeStartDate(uint _startDate) {
         registryStarted = _startDate > 0 ? _startDate : now;
     }
 
@@ -352,7 +392,7 @@ contract Registrar {
         if (msg.value < minPrice) throw;
 
         // Creates a new hash contract with the owner
-        Deed newBid = (new Deed).value(msg.value)(msg.sender);
+        Deed newBid = (new Deed).value(msg.value)(msg.sender, burn);
         sealedBids[msg.sender][sealedBid] = newBid;
         NewBid(sealedBid, msg.sender, msg.value);
     }
