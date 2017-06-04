@@ -1,11 +1,15 @@
 pragma solidity ^0.4.9;
 
 import './AbstractENS.sol';
+import './strings.sol';
+import './ERC20Interface.sol';
 
 /**
  * The ECNS registry contract.
  */
 contract ECNS is AbstractENS {
+    using strings for *;
+    
     struct Record {
         address owner;
         address resolver;
@@ -23,7 +27,7 @@ contract ECNS is AbstractENS {
     /**
      * Constructs a new ENS registrar.
      */
-    function ENS() {
+    function ECNS() {
         records[0].owner = msg.sender;
     }
 
@@ -90,5 +94,32 @@ contract ECNS is AbstractENS {
     function setTTL(bytes32 node, uint64 ttl) only_owner(node) {
         NewTTL(node, ttl);
         records[node].ttl = ttl;
+    }
+    
+    
+    function namehash(string _node) constant returns (bytes32){
+        var node = _node.toSlice();
+        bytes32 namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        if(!node.empty()) {
+            var delim = ".".toSlice();
+            var parts = new string[](node.count(delim) + 1);
+            for(uint i = 0; i < parts.length; i++) {
+                parts[i] = node.split(delim).toString();
+            }
+            
+            for(i = 0; i < parts.length; i++) {
+                namehash = sha3(namehash, sha3(parts[parts.length - i - 1]));
+            }
+        }
+        return namehash;
+    }
+    
+    function extractToken(address _ERC20token) {
+        if (msg.sender != records[0].owner) {
+            throw;
+        }
+        
+        ERC20Interface token = ERC20Interface(_ERC20token);
+        token.transfer(msg.sender, token.balanceOf(this));
     }
 }
