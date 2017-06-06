@@ -194,7 +194,7 @@ contract Registrar {
        // ens = _ens;
         lib = HashRegistrarLib(0x9EE99c1DB77412ED1a3c229561ED08Ec82E53A80);
         ens = AbstractENS(0x0b5A3f012d610446a0d6e5d36Ef4d8A4416FeDe7);
-        rootNode = _rootNode;
+        rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;
         registryStarted = _startDate > 0 ? _startDate : now;
     }
     
