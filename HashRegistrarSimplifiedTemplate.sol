@@ -16,168 +16,15 @@ The plan is to test the basic features and then move to a new contract in at mos
 
 import './AbstractENS.sol';
 import './ERC20Interface.sol';
-import './HashRegistrarTemplate.sol';
+import './HashRegistrar.sol';
 
-
-/**
- * @title Deed to hold ether in exchange for ownership of a node
- * @dev The deed can be controlled only by the registrar and can only send ether back to the owner.
- */
-contract StrLib {
-
-    /**
-     * @dev Returns the maximum of two unsigned integers
-     *
-     * @param a A number to compare
-     * @param b A number to compare
-     * @return The maximum of two unsigned integers
-     */
-    function max(uint a, uint b) constant returns (uint max) {
-        if (a > b)
-            return a;
-        else
-            return b;
-    }
-
-    /**
-     * @dev Returns the minimum of two unsigned integers
-     *
-     * @param a A number to compare
-     * @param b A number to compare
-     * @return The minimum of two unsigned integers
-     */
-    function min(uint a, uint b) constant returns (uint min) {
-        if (a < b)
-            return a;
-        else
-            return b;
-    }
-
-    /**
-     * @dev Returns the length of a given string
-     *
-     * @param s The string to measure the length of
-     * @return The length of the input string
-     */
-    function strlen(string s) constant returns (uint) {
-        s; // Don't warn about unused variables
-        // Starting here means the LSB will be the byte we care about
-        uint ptr;
-        uint end;
-        assembly {
-            ptr := add(s, 1)
-            end := add(mload(s), ptr)
-        }
-        for (uint len = 0; ptr < end; len++) {
-            uint8 b;
-            assembly { b := and(mload(ptr), 0xFF) }
-            if (b < 0x80) {
-                ptr += 1;
-            } else if (b < 0xE0) {
-                ptr += 2;
-            } else if (b < 0xF0) {
-                ptr += 3;
-            } else if (b < 0xF8) {
-                ptr += 4;
-            } else if (b < 0xFC) {
-                ptr += 5;
-            } else {
-                ptr += 6;
-            }
-        }
-        return len;
-    }
-}
-
-
-/**
- * @title Deed to hold ether in exchange for ownership of a node
- * @dev The deed can be controlled only by the registrar and can only send ether back to the owner.
- */
-contract Deed {
-    address public registrar;
-    address constant burn = 0x222E674FB1a7910cCF228f8aECF760508426b482; // My Rinkeby address.
-    uint public creationDate;
-    address public owner;
-    address public previousOwner;
-    uint public value;
-    event OwnerChanged(address newOwner);
-    event DeedClosed();
-    bool active;
-
-    modifier onlyRegistrar {
-        if (msg.sender != registrar) throw;
-        _;
-    }
-
-    modifier onlyActive {
-        if (!active) throw;
-        _;
-    }
-
-    function Deed(address _owner) payable {
-        owner = _owner;
-        registrar = msg.sender;
-        creationDate = now;
-        active = true;
-        value = msg.value;
-    }
-
-    function setOwner(address newOwner) onlyRegistrar {
-        if (newOwner == 0) throw;
-        previousOwner = owner;  // This allows contracts to check who sent them the ownership
-        owner = newOwner;
-        OwnerChanged(newOwner);
-    }
-
-    function setRegistrar(address newRegistrar) onlyRegistrar {
-        registrar = newRegistrar;
-    }
-
-    function setBalance(uint newValue, bool throwOnFailure) onlyRegistrar onlyActive {
-        // Check if it has enough balance to set the value
-        if (value < newValue) throw;
-        value = newValue;
-        // Send the difference to the owner
-        if (!owner.send(this.balance - newValue) && throwOnFailure) throw;
-    }
-
-    /**
-     * @dev Close a deed and refund a specified fraction of the bid value
-     *
-     * @param refundRatio The amount*1/1000 to refund
-     */
-    function closeDeed(uint refundRatio) onlyRegistrar onlyActive {
-        active = false;
-        if (! burn.send(((1000 - refundRatio) * this.balance)/1000)) throw;
-        DeedClosed();
-        destroyDeed();
-    }
-
-    /**
-     * @dev Close a deed and refund a specified fraction of the bid value
-     */
-    function destroyDeed() {
-        if (active) throw;
-        
-        // Instead of selfdestruct(owner), invoke owner fallback function to allow
-        // owner to log an event if desired; but owner should also be aware that
-        // its fallback function can also be invoked by setBalance
-        if (owner.send(this.balance)) {
-            selfdestruct(burn);
-        }
-    }
-}
 
 /**
  * @title Registrar
  * @dev The registrar handles the auction process for each subnode of the node it owns.
  */
-contract Registrar {
+contract RegistrarTemplate {
     StrLib lib;
-    
-    
-    RegistrarTemplate EFRegistrar; // This is a base version of Ethereum Foundation hash registrar.
     AbstractENS public ens;
     bytes32 public rootNode;
 
@@ -261,12 +108,9 @@ contract Registrar {
      */
     function Registrar(AbstractENS _ens, bytes32 _rootNode, uint _startDate) {
        // ens = _ens;
-       
-       // Insert Rinkeby testnet addresses here.
         lib = StrLib(0x9EE99c1DB77412ED1a3c229561ED08Ec82E53A80);
         ens = AbstractENS(0x0b5A3f012d610446a0d6e5d36Ef4d8A4416FeDe7);
         rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;
-        EFRegistrar = RegistrarTemplate(0x0b5A3f012d610446a0d6e5d36Ef4d8A4416FeDe7); 
         registryStarted = _startDate > 0 ? _startDate : now;
     }
     
@@ -531,19 +375,68 @@ contract Registrar {
      * @param unhashedName An invalid name to search for in the registry.
      */
     function invalidateName(string unhashedName) inState(sha3(unhashedName), Mode.Owned) {
-        EFRegistrar.delegatecall(bytes4(sha3("invalidateName(string)")), unhashedName);
+        if (lib.strlen(unhashedName) > 6) throw;
+        bytes32 hash = sha3(unhashedName);
+
+        entry h = _entries[hash];
+
+        _tryEraseSingleNode(hash);
+
+        if (address(h.deed) != 0) {
+            // Reward the discoverer with 50% of the deed
+            // The previous owner gets 50%
+            h.value = lib.max(h.value, minPrice);
+            h.deed.setBalance(h.value/2, false);
+            h.deed.setOwner(msg.sender);
+            h.deed.closeDeed(1000);
+        }
+
+        HashInvalidated(hash, unhashedName, h.value, h.registrationDate);
+
+        h.value = 0;
+        h.highestBid = 0;
+        h.deed = Deed(0);
     }
-    
+
+    /**
+     * @dev Allows anyone to delete the owner and resolver records for a (subdomain of a)
+     *      name that is not currently owned in the registrar. If passing, eg, 'foo.bar.eth',
+     *      the owner and resolver fields on 'foo.bar.eth' and 'bar.eth' will all be cleared.
+     *
+     * @param labels A series of label hashes identifying the name to zero out, rooted at the
+     *        registrar's root. Must contain at least one element. For instance, to zero 
+     *        'foo.bar.eth' on a registrar that owns '.eth', pass an array containing
+     *        [sha3('foo'), sha3('bar')].
+     */
     function eraseNode(bytes32[] labels) {
-        EFRegistrar.delegatecall(bytes4(sha3("eraseNode(bytes32[])")), labels);
+        if (labels.length == 0) throw;
+        if (state(labels[labels.length - 1]) == Mode.Owned) throw;
+
+        _eraseNodeHierarchy(labels.length - 1, labels, rootNode);
     }
 
     function _tryEraseSingleNode(bytes32 label) internal {
-        EFRegistrar.delegatecall(bytes4(sha3("_tryEraseSingleNode(bytes32)")), label);
+        if (ens.owner(rootNode) == address(this)) {
+            ens.setSubnodeOwner(rootNode, label, address(this));
+            var node = sha3(rootNode, label);
+            ens.setResolver(node, 0);
+            ens.setOwner(node, 0);
+        }
     }
 
     function _eraseNodeHierarchy(uint idx, bytes32[] labels, bytes32 node) internal {
-        EFRegistrar.delegatecall(bytes4(sha3("_eraseNodeHierarchy(uint256,bytes32[],bytes32)")), idx, labels, node);
+        // Take ownership of the node
+        ens.setSubnodeOwner(node, labels[idx], address(this));
+        node = sha3(node, labels[idx]);
+        
+        // Recurse if there are more labels
+        if (idx > 0) {
+            _eraseNodeHierarchy(idx - 1, labels, node);
+        }
+
+        // Erase the resolver and owner records
+        ens.setResolver(node, 0);
+        ens.setOwner(node, 0);
     }
 
     /**
@@ -562,7 +455,7 @@ contract Registrar {
         h.deed.setRegistrar(registrar);
 
         // Call the new registrar to accept the transfer
-        Registrar(registrar).acceptRegistrarTransfer(_hash, h.deed, h.registrationDate);
+        RegistrarTemplate(registrar).acceptRegistrarTransfer(_hash, h.deed, h.registrationDate);
 
         // Zero out the entry
         h.deed = Deed(0);
@@ -581,12 +474,6 @@ contract Registrar {
      */
     function acceptRegistrarTransfer(bytes32 hash, Deed deed, uint registrationDate) {
         hash; deed; registrationDate; // Don't warn about unused variables
-    }
-    
-    // function to extract ERC20 stuck tokens
-    function extractToken(address _ERC20token) {
-        ERC20Interface token = ERC20Interface(_ERC20token);
-        token.transfer(msg.sender, token.balanceOf(this));
     }
 
 }
