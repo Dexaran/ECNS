@@ -1,7 +1,8 @@
 pragma solidity ^0.4.9;
 
 import './AbstractENS.sol';
-import "github.com/Arachnid/solidity-stringutils/strings.sol";
+import './strings.sol';
+import './ERC20Interface.sol';
 
 /**
  * The ECNS registry contract.
@@ -26,7 +27,7 @@ contract ECNS is AbstractENS {
     /**
      * Constructs a new ENS registrar.
      */
-    function ENS() {
+    function ECNS() {
         records[0].owner = msg.sender;
     }
 
@@ -94,32 +95,31 @@ contract ECNS is AbstractENS {
         NewTTL(node, ttl);
         records[node].ttl = ttl;
     }
-
-    /**
-     * Returns the namehash of _name.
-     * @param _name String from which you want to make a `namehash`.
-     */
-    function namehash(string _name) constant returns (bytes32) {
-        bytes32 node = 0x0000000000000000000000000000000000000000000000000000000000000000;
-        var s = _name.toSlice();
-        if(s.compare(''.toSlice()) == 0) {
-            return node;
+    
+    
+    function namehash(string _node) constant returns (bytes32){
+        var node = _node.toSlice();
+        bytes32 namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        if(!node.empty()) {
+            var delim = ".".toSlice();
+            var parts = new string[](node.count(delim) + 1);
+            for(uint i = 0; i < parts.length; i++) {
+                parts[i] = node.split(delim).toString();
+            }
+            
+            for(i = 0; i < parts.length; i++) {
+                namehash = sha3(namehash, sha3(parts[parts.length - i - 1]));
+            }
         }
-        var delim = ".".toSlice();
-        var parts = new string[](s.count(delim) + 1);
-        if(parts.length == 0) {
-            return sha3(node, sha3(_name));
-        }
-        
-        
-        for(uint i = 0; i < parts.length; i++) {
-            parts[i] = s.split(delim).toString();
-        }
-        
-        for (uint l; l < parts.length; l++) {
-            node = sha3(node, sha3(parts[parts.length - l - 1]));
+        return namehash;
+    }
+    
+    function extractToken(address _ERC20token) {
+        if (msg.sender != records[0].owner) {
+            throw;
         }
         
-        return node;
+        ERC20Interface token = ERC20Interface(_ERC20token);
+        token.transfer(msg.sender, token.balanceOf(this));
     }
 }
