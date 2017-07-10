@@ -1,7 +1,7 @@
 pragma solidity ^0.4.11;
 
 /**
- * The ECNS registry contract.
+ * The interface is needed to extract stuck ERC20 tokens from contracts
  */
 contract ERC20Interface {
     uint256 public totalSupply;
