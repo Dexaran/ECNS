@@ -1,12 +1,25 @@
 # ECNS
 Implementations for registrars and local resolvers for the Ethereum Classic Name Service.
 
-For documentation of the ECNS system, see [docs.ENS.domains](http://docs.ens.domains/).
+For documentation of the original ENS system, see [docs.ENS.domains](http://docs.ens.domains/).
 
-To run unittests, clone this repository, and run:
+# Differences between ENS and ECNS
 
-    npm install
-    npm test
+1. ECNS will not burn funds. There is a special `burn` address at the Registrar that will receive funds at destroy of the `Deed` instead of burning them.
+
+2. ECNS registry natively supports `namehash` algorithm. It is possible to call `namehash(string)` and get its nameHash without having to implement the algorithm by third parties.
+
+3. There is a function to extract stuck ERC20 tokens from each contract: Registry and Registrar. I hope no one will throw tokens into Deed because of it's not a contract that users would interact with and there is no need to spend extra gas for this.
+
+4. rootNode is `.etc`
+
+The income from ECNS will be outputted into special `burn` address. It will be distributed via voting of [DEX token](https://dexaran.github.io/ICO/) holders after 1st September 2018 when voting contract will be established.
+
+ECNS contracts are deployed on Rinkeby:
+
+Hash Registrar:   [0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64](https://rinkeby.etherscan.io/address/0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64)
+
+Registry:         [0xf1c245ae07eddc19b99312b22133914966461110](https://rinkeby.etherscan.io/address/0xf1c245ae07eddc19b99312b22133914966461110)
 
 ## ECNS.sol
 Implementation of the ECNS Registry, the central contract used to look up resolvers and owners for domains.
@@ -16,9 +29,6 @@ Implementation of a simple first-in-first-served registrar, which issues (sub-)d
 
 ## HashRegistrar.sol
 Implementation of a registrar based on second-price blind auctions and funds held on deposit, with a renewal process that weights renewal costs according to the change in mean price of registering a domain. Largely untested!
-
-## HashRegistrarSimplified.sol
-Simplified version of the above, with no support for renewals. This is the current proposal for interim registrar of the ECNS system until a permanent registrar is decided on.
 
 ## PublicResolver.sol
 Simple resolver implementation that allows the owner of any domain to configure how its name should resolve. One deployment of this contract allows any number of people to use it, by setting it as their resolver in the registry.
@@ -59,20 +69,10 @@ Resolvers must implement one mandatory method, `has`, and may implement any numb
 
 ## has(bytes32 node, bytes32 kind) constant returns (bool)
 
-Returns true iff the specified node has the specified record kind available. Record kinds are defined by each resolver type and standardised in EIPs; currently only "addr" is supported.
+Returns true if the specified node has the specified record kind available. Record kinds are defined by each resolver type and standardised in EIPs; currently only "addr" is supported.
 
-`has()` must return false iff the corresponding record type specific methods will throw if called.
+`has()` must return false if the corresponding record type specific methods will throw if called.
 
 ## addr(bytes32 node) constant returns (address ret)
 
 Implements the addr resource type. Returns the Ethereum address associated with a node if it exists, or `throw`s if it does not.
-
-# Generating ABI and binary data
-
-ECNS.lll.bin was generated with the following command, using the lllc packaged with Solidity 0.4.4:
-
-    lllc ECNS.lll > ECNS.lll.bin
-
-The files in the abi directory were generated with the following command:
-
-    solc --abi -o abi interface.sol FIFSRegistrar.sol HashRegistrarSimplified.sol PublicResolver.sol
