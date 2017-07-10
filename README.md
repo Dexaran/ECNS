@@ -16,7 +16,9 @@ For documentation of the original ENS system, see [docs.ENS.domains](http://docs
 The income from ECNS will be outputted into special `burn` address. It will be distributed via voting of [DEX token](https://dexaran.github.io/ICO/) holders after 1st September 2018 when voting contract will be established.
 
 ECNS contracts are deployed on Rinkeby:
+
 Hash Registrar:   [0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64](https://rinkeby.etherscan.io/address/0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64)
+
 Registry:         [0xf1c245ae07eddc19b99312b22133914966461110](https://rinkeby.etherscan.io/address/0xf1c245ae07eddc19b99312b22133914966461110)
 
 ## ECNS.sol
