@@ -13,7 +13,7 @@ For documentation of the original ENS system, see [docs.ENS.domains](http://docs
 
 4. rootNode is `.etc`
 
-The income from ECNS will be outputted into special `burn` address. It will be distributed via voting of [DEX token](https://dexaran.github.io/ICO/) holders after 1st September 2018 when voting contract will be established.
+The revenue from ECNS will be outputted to a special address. It will be distributed by vote of [DEX token](https://dexaran.github.io/ICO/) holders after September 1, 2018, when a voting contract will be deployed.
 
 ECNS contracts are deployed on Rinkeby:
 
