@@ -13,6 +13,8 @@ For documentation of the original ENS system, see [docs.ENS.domains](http://docs
 
 4. rootNode is `.etc`
 
+The income from ECNS will be outputted into special `burn` address. It will be distributed via voting of [DEX token](https://dexaran.github.io/ICO/) holders after 1st September 2018 when voting contract will be established.
+
 ## ECNS.sol
 Implementation of the ECNS Registry, the central contract used to look up resolvers and owners for domains.
 
