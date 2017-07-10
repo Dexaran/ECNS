@@ -1,4 +1,4 @@
-pragma solidity ^0.4.9;
+pragma solidity ^0.4.11;
 
 
 /*
@@ -15,6 +15,8 @@ The plan is to test the basic features and then move to a new contract in at mos
 
 
 import './AbstractENS.sol';
+import './ERC20Interface.sol';
+
 
 
 /**
@@ -23,7 +25,7 @@ import './AbstractENS.sol';
  */
 contract Deed {
     address public registrar;
-    address constant burn = 0xdead;
+    address public burn;
     uint public creationDate;
     address public owner;
     address public previousOwner;
@@ -42,8 +44,9 @@ contract Deed {
         _;
     }
 
-    function Deed(address _owner) payable {
+    function Deed(address _owner, address _burn) payable {
         owner = _owner;
+        burn = _burn;
         registrar = msg.sender;
         creationDate = now;
         active = true;
@@ -101,19 +104,27 @@ contract Deed {
  * @dev The registrar handles the auction process for each subnode of the node it owns.
  */
 contract Registrar {
+    
     AbstractENS public ens;
     bytes32 public rootNode;
 
     mapping (bytes32 => entry) _entries;
     mapping (address => mapping(bytes32 => Deed)) public sealedBids;
+    address public burn = msg.sender;
     
     enum Mode { Open, Auction, Owned, Forbidden, Reveal, NotYetAvailable }
 
-    uint32 constant totalAuctionLength = 5 days;
-    uint32 constant revealPeriod = 48 hours;
-    uint32 public constant launchLength = 8 weeks;
+    //uint32 constant totalAuctionLength = 5 days;
+    //uint32 constant revealPeriod = 48 hours;
+    //uint32 public constant launchLength = 8 weeks;
+    
+    
+    // WARNING ! Variables reduced due to testing reasons.
+    uint32 constant totalAuctionLength = 50 minutes;
+    uint32 constant revealPeriod = 25 minutes;
+    uint32 public constant launchLength = 15 minutes;
 
-    uint constant minPrice = 0.01 ether;
+    uint public minPrice = 0.01 ether;
     uint public registryStarted;
 
     event AuctionStarted(bytes32 indexed hash, uint registrationDate);
@@ -177,78 +188,14 @@ contract Registrar {
     }
 
     /**
-     * @dev Constructs a new Registrar, with the provided address as the owner of the root node.
-     *
-     * @param _ens The address of the ENS
-     * @param _rootNode The hash of the rootnode.
+     * @dev Constructor
      */
-    function Registrar(AbstractENS _ens, bytes32 _rootNode, uint _startDate) {
-        ens = _ens;
-        rootNode = _rootNode;
-        registryStarted = _startDate > 0 ? _startDate : now;
-    }
-
-    /**
-     * @dev Returns the maximum of two unsigned integers
-     *
-     * @param a A number to compare
-     * @param b A number to compare
-     * @return The maximum of two unsigned integers
-     */
-    function max(uint a, uint b) internal constant returns (uint max) {
-        if (a > b)
-            return a;
-        else
-            return b;
-    }
-
-    /**
-     * @dev Returns the minimum of two unsigned integers
-     *
-     * @param a A number to compare
-     * @param b A number to compare
-     * @return The minimum of two unsigned integers
-     */
-    function min(uint a, uint b) internal constant returns (uint min) {
-        if (a < b)
-            return a;
-        else
-            return b;
-    }
-
-    /**
-     * @dev Returns the length of a given string
-     *
-     * @param s The string to measure the length of
-     * @return The length of the input string
-     */
-    function strlen(string s) internal constant returns (uint) {
-        s; // Don't warn about unused variables
-        // Starting here means the LSB will be the byte we care about
-        uint ptr;
-        uint end;
-        assembly {
-            ptr := add(s, 1)
-            end := add(mload(s), ptr)
-        }
-        for (uint len = 0; ptr < end; len++) {
-            uint8 b;
-            assembly { b := and(mload(ptr), 0xFF) }
-            if (b < 0x80) {
-                ptr += 1;
-            } else if (b < 0xE0) {
-                ptr += 2;
-            } else if (b < 0xF0) {
-                ptr += 3;
-            } else if (b < 0xF8) {
-                ptr += 4;
-            } else if (b < 0xFC) {
-                ptr += 5;
-            } else {
-                ptr += 6;
-            }
-        }
-        return len;
+    function Registrar() {
+       // Insert Rinkeby testnet addresses here.
+        ens = AbstractENS(0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64);
+        rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;
+        //registryStarted = _startDate > 0 ? _startDate : now;
+        registryStarted = now;
     }
     
     /** 
@@ -352,11 +299,12 @@ contract Registrar {
         if (msg.value < minPrice) throw;
 
         // Creates a new hash contract with the owner
-        Deed newBid = (new Deed).value(msg.value)(msg.sender);
+        Deed newBid = (new Deed).value(msg.value)(msg.sender, burn);
         sealedBids[msg.sender][sealedBid] = newBid;
         NewBid(sealedBid, msg.sender, msg.value);
     }
 
+    /* Removed due to exceed block gas limit
     /**
      * @dev Start a set of auctions and bid on one of them
      *
@@ -365,11 +313,12 @@ contract Registrar {
      *
      * @param hashes A list of hashes to start auctions on.
      * @param sealedBid A sealed bid for one of the auctions.
-     */
+     *
     function startAuctionsAndBid(bytes32[] hashes, bytes32 sealedBid) payable {
         startAuctions(hashes);
         newBid(sealedBid);
     }
+    */
 
     /**
      * @dev Submit the properties of a bid to reveal them
@@ -500,6 +449,7 @@ contract Registrar {
         HashReleased(_hash, h.value);        
     }
 
+
     /**
      * @dev Submit a name 6 characters long or less. If it has been registered,
      *      the submitter will earn 50% of the deed value. 
@@ -534,7 +484,7 @@ contract Registrar {
     }
 
     /**
-     * @dev Allows anyone to delete the owner and resolver records for a (subdomain of) a
+     * @dev Allows anyone to delete the owner and resolver records for a (subdomain of a)
      *      name that is not currently owned in the registrar. If passing, eg, 'foo.bar.eth',
      *      the owner and resolver fields on 'foo.bar.eth' and 'bar.eth' will all be cleared.
      *
@@ -610,5 +560,88 @@ contract Registrar {
     function acceptRegistrarTransfer(bytes32 hash, Deed deed, uint registrationDate) {
         hash; deed; registrationDate; // Don't warn about unused variables
     }
+    
+    
+    function changeMinPrice(uint _minPrice) {
+        if(msg.sender != ens.owner(0)) throw;
+        minPrice = _minPrice;
+    }
+    
+    /**
+     * @dev Returns the maximum of two unsigned integers
+     *
+     * @param a A number to compare
+     * @param b A number to compare
+     * @return The maximum of two unsigned integers
+     */
+    function max(uint a, uint b) constant returns (uint max) {
+        if (a > b)
+            return a;
+        else
+            return b;
+    }
 
+    /**
+     * @dev Returns the minimum of two unsigned integers
+     *
+     * @param a A number to compare
+     * @param b A number to compare
+     * @return The minimum of two unsigned integers
+     */
+    function min(uint a, uint b) constant returns (uint min) {
+        if (a < b)
+            return a;
+        else
+            return b;
+    }
+
+    /**
+     * @dev Returns the length of a given string
+     *
+     * @param s The string to measure the length of
+     * @return The length of the input string
+     */
+    function strlen(string s) constant returns (uint) {
+        s; // Don't warn about unused variables
+        // Starting here means the LSB will be the byte we care about
+        uint ptr;
+        uint end;
+        assembly {
+            ptr := add(s, 1)
+            end := add(mload(s), ptr)
+        }
+        for (uint len = 0; ptr < end; len++) {
+            uint8 b;
+            assembly { b := and(mload(ptr), 0xFF) }
+            if (b < 0x80) {
+                ptr += 1;
+            } else if (b < 0xE0) {
+                ptr += 2;
+            } else if (b < 0xF0) {
+                ptr += 3;
+            } else if (b < 0xF8) {
+                ptr += 4;
+            } else if (b < 0xFC) {
+                ptr += 5;
+            } else {
+                ptr += 6;
+            }
+        }
+        return len;
+    }
+    
+    
+    // function to extract ERC20 stuck tokens
+    function extractToken(address _ERC20token) {
+        ERC20Interface token = ERC20Interface(_ERC20token);
+        token.transfer(msg.sender, token.balanceOf(this));
+    }
+    
+    function changeBurnAddress(address _burn) 
+    {
+        if (ens.owner(0) == msg.sender)
+        {
+            burn = _burn;
+        }
+    }
 }
