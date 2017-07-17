@@ -9,7 +9,7 @@ For documentation of the original ENS system, see [docs.ENS.domains](http://docs
 
 2. ECNS registry natively supports `namehash` algorithm. It is possible to call `namehash(string)` and get its nameHash without having to implement the algorithm by third parties.
 
-3. There is a function to extract stuck ERC20 tokens from each contract: Registry and Registrar. I hope no one will throw tokens into Deed because of it's not a contract that users would interact with and there is no need to spend extra gas for this.
+3. There is a function to extract stuck ERC20 tokens from each contract: Registry and Registrar.
 
 4. rootNode is `.etc`
 
