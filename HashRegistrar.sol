@@ -119,7 +119,7 @@ contract Registrar {
     uint32 public constant launchLength = 8 weeks;
     
     
-    // WARNING ! Variables reduced due to testing reasons.
+    //* WARNING ! Variables reduced due to testing reasons.
     //uint32 constant totalAuctionLength = 50 minutes;
     //uint32 constant revealPeriod = 25 minutes;
     //uint32 public constant launchLength = 15 minutes;
