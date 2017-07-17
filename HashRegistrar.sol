@@ -114,15 +114,15 @@ contract Registrar {
     
     enum Mode { Open, Auction, Owned, Forbidden, Reveal, NotYetAvailable }
 
-    uint32 constant totalAuctionLength = 5 days;
-    uint32 constant revealPeriod = 48 hours;
-    uint32 public constant launchLength = 8 weeks;
+    //uint32 constant totalAuctionLength = 5 days;
+    //uint32 constant revealPeriod = 48 hours;
+    //uint32 public constant launchLength = 8 weeks;
     
     
-    //* WARNING ! Variables reduced due to testing reasons.
-    //uint32 constant totalAuctionLength = 50 minutes;
-    //uint32 constant revealPeriod = 25 minutes;
-    //uint32 public constant launchLength = 15 minutes;
+    // WARNING ! Variables reduced due to testing reasons.
+    uint32 constant totalAuctionLength = 50 minutes;
+    uint32 constant revealPeriod = 25 minutes;
+    uint32 public constant launchLength = 15 minutes;
 
     uint public minPrice = 0.01 ether;
     uint public registryStarted;
@@ -191,10 +191,8 @@ contract Registrar {
      * @dev Constructor
      */
     function Registrar() {
-       // Insert Rinkeby testnet addresses here.
-        ens = AbstractENS(0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64);
+        ens = AbstractENS(0xb96836a066ef81ea038280c733f833f69c23efde);
         rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;
-        //registryStarted = _startDate > 0 ? _startDate : now;
         registryStarted = now;
     }
     
