@@ -13,9 +13,13 @@ For documentation of the original ENS system, see [docs.ENS.domains](http://docs
 
 4. rootNode is `.etc`
 
-The revenue from ECNS will be outputted to a special address. It will be distributed by vote of [DEX token](https://dexaran.github.io/ICO/) holders after September 1, 2018, when a voting contract will be deployed.
+ECNS contracts are deployed on ETC main net:
 
-ECNS contracts are deployed on Rinkeby:
+Hash Registrar:   [0x68ed1d83939a4a7d324043d98c53cd31f0d93e84](https://gastracker.io/addr/0x68ed1d83939a4a7d324043d98c53cd31f0d93e84)
+
+Registry:         [0xb96836a066ef81ea038280c733f833f69c23efde](https://gastracker.io/addr/0xb96836a066ef81ea038280c733f833f69c23efde)
+
+ECNS contracts are deployed on Rinkeby testnet:
 
 Hash Registrar:   [0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64](https://rinkeby.etherscan.io/address/0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64)
 
