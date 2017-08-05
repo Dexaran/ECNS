@@ -187,7 +187,7 @@ contract Registrar {
     function Registrar() {
         ens = AbstractENS(0xb96836a066ef81ea038280c733f833f69c23efde);
         rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;
-        registryStarted = now;
+        registryStarted = 1500276693;
     }
     
     /** 
@@ -296,7 +296,6 @@ contract Registrar {
         NewBid(sealedBid, msg.sender, msg.value);
     }
 
-    /* Removed due to exceed block gas limit
     /**
      * @dev Start a set of auctions and bid on one of them
      *
@@ -305,12 +304,11 @@ contract Registrar {
      *
      * @param hashes A list of hashes to start auctions on.
      * @param sealedBid A sealed bid for one of the auctions.
-     *
+     */
     function startAuctionsAndBid(bytes32[] hashes, bytes32 sealedBid) payable {
         startAuctions(hashes);
         newBid(sealedBid);
     }
-    */
 
     /**
      * @dev Submit the properties of a bid to reveal them
