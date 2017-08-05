@@ -15,7 +15,7 @@ For documentation of the original ENS system, see [docs.ENS.domains](http://docs
 
 #### ECNS contracts are deployed on ETC main net:
 
-Hash Registrar:   [0x68ed1d83939a4a7d324043d98c53cd31f0d93e84](https://gastracker.io/addr/0x68ed1d83939a4a7d324043d98c53cd31f0d93e84)
+Hash Registrar:   [0x7564711a9c72edfb5ca10f2962066c707398121d](https://gastracker.io/addr/0x7564711a9c72edfb5ca10f2962066c707398121d)
 
 Registry:         [0xb96836a066ef81ea038280c733f833f69c23efde](https://gastracker.io/addr/0xb96836a066ef81ea038280c733f833f69c23efde)
 
