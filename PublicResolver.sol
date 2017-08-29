@@ -36,7 +36,7 @@ contract PublicResolver {
         mapping(uint256=>bytes) abis;
     }
 
-    AbstractENS ens;
+    AbstractENS public ens;
     mapping(bytes32=>Record) records;
 
     modifier only_owner(bytes32 node) {
@@ -46,10 +46,9 @@ contract PublicResolver {
 
     /**
      * Constructor.
-     * @param ensAddr The ENS registrar contract.
      */
-    function PublicResolver(AbstractENS ensAddr) {
-        ens = ensAddr;
+    function PublicResolver() {
+        ens = AbstractENS(0xb96836a066ef81ea038280c733f833f69c23efde);
     }
 
     /**
