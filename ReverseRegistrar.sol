@@ -11,9 +11,9 @@ contract ReverseRegistrar {
      * @param ensAddr The address of the ENS registry.
      * @param node The node hash that this registrar governs.
      */
-    function ReverseRegistrar(AbstractENS ensAddr, bytes32 node) {
-        ens = ensAddr;
-        rootNode = node;
+    function ReverseRegistrar() {
+        ens = AbstractENS(0xb96836a066ef81ea038280c733f833f69c23efde); // Our ETC ENS
+        rootNode = 0x2f142013fcc88d47bffe42e5d883f6081cbaa75abaa20e7f34f3043bbc8162c9;// .etc TLD
     }
 
     /**
