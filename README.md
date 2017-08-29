@@ -19,6 +19,8 @@ Hash Registrar:   [0x7564711a9c72edfb5ca10f2962066c707398121d](https://gastracke
 
 Registry:         [0xb96836a066ef81ea038280c733f833f69c23efde](https://gastracker.io/addr/0xb96836a066ef81ea038280c733f833f69c23efde)
 
+Public Resolver:  [0x4fa1fc37a083abe4c53b6304f389042bc0566855](https://gastracker.io/addr/0x4fa1fc37a083abe4c53b6304f389042bc0566855)
+
 #### ECNS contracts are deployed on Rinkeby testnet:
 
 Hash Registrar:   [0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64](https://rinkeby.etherscan.io/address/0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64)
