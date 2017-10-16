@@ -33,6 +33,8 @@ contract Deed {
     event OwnerChanged(address newOwner);
     event DeedClosed();
     bool active;
+    
+    event DeedCreated(address indexed _deed);
 
     modifier onlyRegistrar {
         if (msg.sender != registrar) throw;
@@ -51,6 +53,7 @@ contract Deed {
         creationDate = now;
         active = true;
         value = msg.value;
+        DeedCreated(this);
     }
 
     function setOwner(address newOwner) onlyRegistrar {
