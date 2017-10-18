@@ -26,6 +26,9 @@ import './ERC20Interface.sol';
 contract Deed {
     address public registrar;
     address public burn;
+    uint public duration; // in blocks
+    uint public creationBlock; 
+    
     uint public creationDate;
     address public owner;
     address public previousOwner;
@@ -34,7 +37,7 @@ contract Deed {
     event DeedClosed();
     bool active;
     
-    event DeedCreated(address indexed _deed);
+    event DeedCreated(address indexed _deed, uint256 _expires);
 
     modifier onlyRegistrar {
         if (msg.sender != registrar) throw;
@@ -46,14 +49,16 @@ contract Deed {
         _;
     }
 
-    function Deed(address _owner, address _burn) payable {
+    function Deed(address _owner, address _burn, uint _duration) payable {
         owner = _owner;
         burn = _burn;
         registrar = msg.sender;
         creationDate = now;
         active = true;
         value = msg.value;
-        DeedCreated(this);
+        duration = _duration;
+        creationBlock = block.number;
+        DeedCreated(this, creationBlock + duration);
     }
 
     function setOwner(address newOwner) onlyRegistrar {
@@ -100,6 +105,17 @@ contract Deed {
             selfdestruct(burn);
         }
     }
+    
+    /**
+     * @dev Close a deed and refund a specified fraction of the bid value
+     */
+    function destroyStaleDeed() {
+        if( block.number < creationBlock + duration ) throw;
+        
+        if (burn.send(((1000 - 950) * this.balance)/1000)) {
+            selfdestruct(msg.sender);
+        }
+    }
 }
 
 /**
@@ -123,6 +139,7 @@ contract Registrar {
 
     uint public minPrice = 0.01 ether;
     uint public registryStarted;
+    uint public deedDuration = 67500; // 9 days at avg blocktime = 12 seconds.
 
     event AuctionStarted(bytes32 indexed hash, uint registrationDate);
     event NewBid(bytes32 indexed hash, address indexed bidder, uint deposit);
@@ -294,7 +311,7 @@ contract Registrar {
         if (msg.value < minPrice) throw;
 
         // Creates a new hash contract with the owner
-        Deed newBid = (new Deed).value(msg.value)(msg.sender, burn);
+        Deed newBid = (new Deed).value(msg.value)(msg.sender, burn, deedDuration);
         sealedBids[msg.sender][sealedBid] = newBid;
         NewBid(sealedBid, msg.sender, msg.value);
     }
@@ -381,13 +398,14 @@ contract Registrar {
         // the revealPeriod to get back their bid value.
         // For simplicity, they should call `startAuction` within
         // 9 days (2 weeks - totalAuctionLength), otherwise their bid will be
-        // cancellable by anyone.
+        // cancellable by anyone and their Deed will be considered stale.
         if (address(bid) == 0
             || now < bid.creationDate() + totalAuctionLength + 2 weeks) throw;
 
-        // Send the canceller 0.5% of the bid, and burn the rest.
-        bid.setOwner(msg.sender);
-        bid.closeDeed(5);
+        // ECNS does not allow to access DEED funds by cancelling a stale bid
+        // because miners can affect timestamp at their will
+        // thus, cancelling a high valued bid will be attractive enough for them.
+        
         sealedBids[bidder][seal] = Deed(0);
         BidRevealed(seal, bidder, 0, 5);
     }
