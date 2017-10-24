@@ -655,4 +655,12 @@ contract Registrar {
             burn = _burn;
         }
     }
+    
+    function changeDeedDuration(address _deedDuration) 
+    {
+        if (ens.owner(0) == msg.sender)
+        {
+            deedDuration = _deedDuration;
+        }
+    }
 }
