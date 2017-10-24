@@ -27,7 +27,7 @@ Reverse Registrar:[0x9434e3f592f5d63de25dbd54af4bd58b822b6136](https://gastracke
 
 Hash Registrar:   [0xb93d8610e5efae1c7f7bcb5c65cfb58c3346ed0d](https://rinkeby.etherscan.io/address/0xb93d8610e5efae1c7f7bcb5c65cfb58c3346ed0d)
 
-Registry:         [0xf1c245ae07eddc19b99312b22133914966461110](https://rinkeby.etherscan.io/address/0xf1c245ae07eddc19b99312b22133914966461110)
+Registry:         [0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64](https://rinkeby.etherscan.io/address/0xB6FedAA1c1a170eecb4d5C1984eA4023aEb91d64)
 
 ## ECNS.sol
 Implementation of the ECNS Registry, the central contract used to look up resolvers and owners for domains.
