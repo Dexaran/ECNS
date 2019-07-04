@@ -18,6 +18,17 @@ import './AbstractENS.sol';
 import './ERC20Interface.sol';
 
 
+/**
+ * @title CallDepthChecker
+ * @dev Does one recursive call to ensure failure in case of high call depth.
+ */
+ 
+ contract CallDepthChecker {
+ 
+    function CallDepthChecker() {
+        selfdestruct( 0x0 );
+    }
+ }
 
 /**
  * @title Deed to hold ether in exchange for ownership of a node
@@ -77,6 +88,10 @@ contract Deed {
         if (value < newValue) throw;
         value = newValue;
         // Send the difference to the owner
+        if( ! throwOnFailure ) {
+            var x = new CallDepthChecker();
+            if( x == address(0x0) ) throw;
+        }
         if (!owner.send(this.balance - newValue) && throwOnFailure) throw;
     }
 
@@ -101,6 +116,10 @@ contract Deed {
         // Instead of selfdestruct(owner), invoke owner fallback function to allow
         // owner to log an event if desired; but owner should also be aware that
         // its fallback function can also be invoked by setBalance
+        var x = new CallDepthChecker();
+        if( x == address(0x0) ) throw;
+        
+        
         if (owner.send(this.balance)) {
             selfdestruct(burn);
         }
